@@ -21,15 +21,34 @@ const client = new MongoClient(uri, {
   }
 });
 
+//make database and collections 
+
+
 
 async function run() {
   try {
     await client.connect();
+    const database = client.db('reseller-a10')
+    const productCollection = database.collection('productInfo')
+    
 
 
+   // make seller job post 
+   app.post('/api/products',async(req,res)=>{
+   const pbody = req.body
+   const updateProduct = {
+    ...pbody,
+    createdAt:new Date()
+   }
+   const result = await productCollection.insertOne(updateProduct)
+   res.send(result)
+   }) 
 
-
-
+   // get the product data 
+  //  app.get('/api/products',async(req,res)=>{
+  //   const result = await productCollection.find().toArray()
+  //   res.send(result)
+  //  })
 
 
     // Send a ping to confirm a successful connection
