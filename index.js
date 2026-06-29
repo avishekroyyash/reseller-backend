@@ -45,6 +45,7 @@ async function run() {
    }) 
 
 
+
    // all seller api 
   // get the all product data 
    app.get('/api/products',async(req,res)=>{
@@ -71,7 +72,13 @@ async function run() {
     const result = await productCollection.updateOne(filter,updateBody)
     res.send(result)
   })
-
+  // delete the seller job
+  app.delete('/api/products/:id',async(req,res)=>{
+    const {id}=req.params
+    const filter = {_id:new ObjectId(id)}
+    const result = await productCollection.deleteOne(filter)
+    res.send(result)
+  })
 
 
     // Send a ping to confirm a successful connection
