@@ -6,7 +6,7 @@ const port = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGODB_URL
 
 app.get('/', (req, res) => {
@@ -44,11 +44,34 @@ async function run() {
    res.send(result)
    }) 
 
-   // get the product data 
-  //  app.get('/api/products',async(req,res)=>{
-  //   const result = await productCollection.find().toArray()
-  //   res.send(result)
-  //  })
+
+   // all seller api 
+  // get the all product data 
+   app.get('/api/products',async(req,res)=>{
+    const result = await productCollection.find().toArray()
+    res.send(result)
+   })
+   
+  // get the seller my all product
+  app.get('/api/products/seller/:sellerId',async(req,res)=>{
+    const {sellerId}=req.params
+    const result = await productCollection.find({sellerId}).toArray()
+    res.send(result)
+  })
+  //edit the seller product by product id
+  app.patch('/api/products/:id',async(req,res)=>{
+    const {id}= req.params
+    const pbody = req.body
+    const filter = {_id:new ObjectId(id)}
+    const updateBody = {
+      $set:{
+        ...pbody
+      },
+    }
+    const result = await productCollection.updateOne(filter,updateBody)
+    res.send(result)
+  })
+
 
 
     // Send a ping to confirm a successful connection
