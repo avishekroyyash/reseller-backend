@@ -53,8 +53,7 @@ async function run() {
   //   res.send(result)
   //  })
    
-  app.get("/api/products", async (req, res) => {
-      console.log("Query:", req.query);
+app.get("/api/products", async (req, res) => {
   const query = {};
 
   if (req.query.search) {
@@ -72,23 +71,41 @@ async function run() {
     query.condition = req.query.condition;
   }
 
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 12;
+
+  const skip = (page - 1) * limit;
+
   let cursor = productCollection.find(query);
 
-  if (req.query.sort === "low") {
-    cursor = cursor.sort({ price: 1 });
+  // Sorting
+  switch (req.query.sort) {
+    case "low":
+      cursor = cursor.sort({ price: 1 });
+      break;
+
+    case "high":
+      cursor = cursor.sort({ price: -1 });
+      break;
+
+    case "latest":
+      cursor = cursor.sort({ createdAt: -1 });
+      break;
   }
 
-  if (req.query.sort === "high") {
-    cursor = cursor.sort({ price: -1 });
-  }
+  const totalProducts = await productCollection.countDocuments(query);
 
-  if (req.query.sort === "latest") {
-    cursor = cursor.sort({ createdAt: -1 });
-  }
+  const products = await cursor
+    .skip(skip)
+    .limit(limit)
+    .toArray();
 
-  const products = await cursor.toArray();
-
-  res.send(products);
+  res.send({
+    products,
+    totalProducts,
+    currentPage: page,
+    totalPages: Math.ceil(totalProducts / limit),
+  });
 });
 
 
