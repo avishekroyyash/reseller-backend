@@ -47,11 +47,53 @@ async function run() {
 
 
    // all seller api 
-  // get the all product data 
-   app.get('/api/products',async(req,res)=>{
-    const result = await productCollection.find().toArray()
-    res.send(result)
-   })
+  // get the all product data and implement search/filter/sort/catagory
+  //  app.get('/api/products',async(req,res)=>{
+  //   const result = await productCollection.find().toArray()
+  //   res.send(result)
+  //  })
+   
+  app.get("/api/products", async (req, res) => {
+      console.log("Query:", req.query);
+  const query = {};
+
+  if (req.query.search) {
+    query.title = {
+      $regex: req.query.search,
+      $options: "i",
+    };
+  }
+
+  if (req.query.category) {
+    query.category = req.query.category;
+  }
+
+  if (req.query.condition) {
+    query.condition = req.query.condition;
+  }
+
+  let cursor = productCollection.find(query);
+
+  if (req.query.sort === "low") {
+    cursor = cursor.sort({ price: 1 });
+  }
+
+  if (req.query.sort === "high") {
+    cursor = cursor.sort({ price: -1 });
+  }
+
+  if (req.query.sort === "latest") {
+    cursor = cursor.sort({ createdAt: -1 });
+  }
+
+  const products = await cursor.toArray();
+
+  res.send(products);
+});
+
+
+
+
    
   // get the seller my all product
   app.get('/api/products/seller/:sellerId',async(req,res)=>{
