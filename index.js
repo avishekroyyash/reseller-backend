@@ -31,6 +31,7 @@ async function run() {
     const database = client.db('reseller-a10')
     const productCollection = database.collection('productInfo')
     const wishlistCollection = database.collection('wishlist')
+    const reviewCollection = database.collection('review')
     
   //all buyer api
   // buyer api wishlist post
@@ -65,27 +66,8 @@ async function run() {
 
 
 
-
-
-
-   // all seller api 
-
-   // make seller job post 
-   app.post('/api/products',async(req,res)=>{
-   const pbody = req.body
-   const updateProduct = {
-    ...pbody,
-    createdAt:new Date()
-   }
-   const result = await productCollection.insertOne(updateProduct)
-   res.send(result)
-   }) 
-
   // get the all product data and implement search/filter/sort/catagory
-  //  app.get('/api/products',async(req,res)=>{
-  //   const result = await productCollection.find().toArray()
-  //   res.send(result)
-  //  })
+
    
 app.get("/api/products", async (req, res) => {
   const query = {};
@@ -142,6 +124,43 @@ app.get("/api/products", async (req, res) => {
   });
 });
 
+//get produt by product id in productdetails page
+   app.get('/api/products/:id',async(req,res)=>{
+    const {id}=req.params
+    const result = await productCollection.findOne({_id:new ObjectId(id)})
+    res.send(result)
+   })
+// product review of buyer id and product id 
+ app.post('/api/review',async(req,res)=>{
+  const rbody = req.body
+  const updateBody={
+    ...rbody,
+    createdAt:new Date()
+  }
+  const result = await reviewCollection.insertOne(updateBody)
+  res.send(result)
+ })
+// product review get by product id and sort by review
+app.get('/api/review/:pid',async(req,res)=>{
+  const {pid} = req.params
+  const filter = {productId : pid}
+  const result = await reviewCollection.find(filter).sort({rating : -1}).toArray()
+  res.send(result)
+})
+
+
+  
+   // all seller api 
+  // make seller job post 
+   app.post('/api/products',async(req,res)=>{
+   const pbody = req.body
+   const updateProduct = {
+    ...pbody,
+    createdAt:new Date()
+   }
+   const result = await productCollection.insertOne(updateProduct)
+   res.send(result)
+   }) 
   // get the seller my all product
   app.get('/api/products/seller/:sellerId',async(req,res)=>{
     const {sellerId}=req.params
