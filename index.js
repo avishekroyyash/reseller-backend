@@ -30,8 +30,45 @@ async function run() {
     await client.connect();
     const database = client.db('reseller-a10')
     const productCollection = database.collection('productInfo')
+    const wishlistCollection = database.collection('wishlist')
     
+  //all buyer api
+  // buyer api wishlist post
+  app.post('/api/wishlist',async(req,res)=>{
+  const wbody=req.body
+  const updateBody={
+    ...wbody,
+    createdAt:new Date()
+  }
+  const result = await wishlistCollection.insertOne(updateBody)
+  res.send(result)
+  })
+  //buyer wishlist get
+  app.get('/api/wishlist',async(req,res)=>{
+    const result = await wishlistCollection.find().toArray()
+    res.send(result)
+  })
+  //get wishlist by user id
+   app.get('/api/wishlist/:userid',async(req,res)=>{
+    const {userid} = req.params
+    const filter = {userId:userid}
+    const result = await wishlistCollection.find(filter).toArray()
+    res.send(result)
+  })
+  // buyer wishlist delete 
+  app.delete('/api/wishlist/:id',async(req,res)=>{
+    const {id} = req.params
+    const filter = {productId : id}
+    const result = await wishlistCollection.deleteOne(filter)
+    res.send(result)
+  }) 
 
+
+
+
+
+
+   // all seller api 
 
    // make seller job post 
    app.post('/api/products',async(req,res)=>{
@@ -44,9 +81,6 @@ async function run() {
    res.send(result)
    }) 
 
-
-
-   // all seller api 
   // get the all product data and implement search/filter/sort/catagory
   //  app.get('/api/products',async(req,res)=>{
   //   const result = await productCollection.find().toArray()
@@ -108,10 +142,6 @@ app.get("/api/products", async (req, res) => {
   });
 });
 
-
-
-
-   
   // get the seller my all product
   app.get('/api/products/seller/:sellerId',async(req,res)=>{
     const {sellerId}=req.params
