@@ -63,7 +63,7 @@ async function run() {
   app.get('/api/payment/:id',async(req,res)=>{
     const id=req.params.id
     const filter = {userId: id}
-    const result = await paymentCollection.find(filter).toArray()
+    const result = await paymentCollection.find(filter).sort({ createdAt: -1 }).toArray();
     res.send(result)
   })
 
@@ -96,6 +96,77 @@ async function run() {
     const result = await wishlistCollection.deleteOne(filter)
     res.send(result)
   }) 
+//buyer order get using id 
+app.get("/app/order/:id", async (req, res) => {
+  const id = req.params.id;
+
+  const filter = {
+    "buyerInfo.userId": id,
+  };
+
+  const result = await orderCollection
+    .find(filter)
+    .sort({ createdAt: -1 }) // Newest first
+    .toArray();
+
+  res.send(result);
+});
+ // buyer order cancel 
+ app.patch("/api/orders/:id/cancel", async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  const filter = {
+    _id: new ObjectId(id),
+  };
+
+  const updateDoc = {
+    $set: {
+      orderStatus: "cancelled",
+      cancelledBy: "buyer",
+      cancelledAt: new Date(),
+      cancelReason: reason || "",
+    },
+  };
+
+  const result = await orderCollection.updateOne(filter, updateDoc);
+
+  res.send(result);
+});
+
+app.get("/api/buyer/dashboard/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const totalOrders = await orderCollection.countDocuments({
+    "buyerInfo.userId": id,
+  });
+
+  const cancelledOrders = await orderCollection.countDocuments({
+    "buyerInfo.userId": id,
+    orderStatus: "cancelled",
+  });
+
+  const processingOrders = await orderCollection.countDocuments({
+    "buyerInfo.userId": id,
+    orderStatus: "processing",
+  });
+
+  const recentOrders = await orderCollection
+    .find({
+      "buyerInfo.userId": id,
+    })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .toArray();
+
+  res.send({
+    totalOrders,
+    cancelledOrders,
+    processingOrders,
+    recentOrders,
+  });
+});
+
 
 
 
