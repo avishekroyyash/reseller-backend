@@ -34,7 +34,32 @@ async function run() {
     const reviewCollection = database.collection('review')
     const orderCollection = database.collection('order')
     const paymentCollection = database.collection('payment')
+    const userCollection = database.collection('user')
+
+
+
+
+
+
+
+
+
+
   //all buyer api
+  // buyer profile edit 
+  app.patch('/api/user/:id',async(req,res)=>{
+    const id=req.params.id
+    const ubody = req.body
+    const filter = {_id: new ObjectId(id)}
+    const updateBody={
+     $set:{
+      ...ubody
+     },
+    }
+    const result = await userCollection.updateOne(filter,updateBody)
+    res.send(result)
+  })
+
 
   // buyer api wishlist post
   app.post('/api/wishlist',async(req,res)=>{
