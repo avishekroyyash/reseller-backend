@@ -59,7 +59,13 @@ async function run() {
     const result = await userCollection.updateOne(filter,updateBody)
     res.send(result)
   })
-
+  //buyer payment data get 
+  app.get('/api/payment/:id',async(req,res)=>{
+    const id=req.params.id
+    const filter = {userId: id}
+    const result = await paymentCollection.find(filter).toArray()
+    res.send(result)
+  })
 
   // buyer api wishlist post
   app.post('/api/wishlist',async(req,res)=>{
