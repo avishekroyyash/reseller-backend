@@ -32,8 +32,10 @@ async function run() {
     const productCollection = database.collection('productInfo')
     const wishlistCollection = database.collection('wishlist')
     const reviewCollection = database.collection('review')
-    
+    const orderCollection = database.collection('order')
+    const paymentCollection = database.collection('payment')
   //all buyer api
+
   // buyer api wishlist post
   app.post('/api/wishlist',async(req,res)=>{
   const wbody=req.body
@@ -67,8 +69,6 @@ async function run() {
 
 
   // get the all product data and implement search/filter/sort/catagory
-
-   
 app.get("/api/products", async (req, res) => {
   const query = {};
 
@@ -108,9 +108,7 @@ app.get("/api/products", async (req, res) => {
       cursor = cursor.sort({ createdAt: -1 });
       break;
   }
-
   const totalProducts = await productCollection.countDocuments(query);
-
   const products = await cursor
     .skip(skip)
     .limit(limit)
@@ -123,7 +121,6 @@ app.get("/api/products", async (req, res) => {
     totalPages: Math.ceil(totalProducts / limit),
   });
 });
-
 //get produt by product id in productdetails page
    app.get('/api/products/:id',async(req,res)=>{
     const {id}=req.params
@@ -187,6 +184,30 @@ app.get('/api/review/:pid',async(req,res)=>{
     const result = await productCollection.deleteOne(filter)
     res.send(result)
   })
+
+
+
+  //stripe api which verify payment and then save order and payment history .
+  app.post('/api/order', async (req, res) => {
+  const obody = req.body
+  const updateBody = {
+    ...obody,
+    createdAt : new Date()
+  }
+  const result = await orderCollection.insertOne(updateBody)
+  res.send(result)
+});
+
+app.post('/api/payment',async(req,res)=>{
+  const pbody = req.body
+  const updateBody = {
+    ...pbody,
+    createdAt:new Date()
+  }
+  const result = await paymentCollection.insertOne(updateBody)
+  res.send(result)
+})
+
 
 
     // Send a ping to confirm a successful connection
