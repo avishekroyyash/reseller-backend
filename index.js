@@ -250,7 +250,7 @@ app.get('/api/review/:pid',async(req,res)=>{
 
   
    // all seller api 
-  // make seller job post 
+  // make seller product post 
    app.post('/api/products',async(req,res)=>{
    const pbody = req.body
    const updateProduct = {
@@ -286,6 +286,189 @@ app.get('/api/review/:pid',async(req,res)=>{
     const result = await productCollection.deleteOne(filter)
     res.send(result)
   })
+// seller get all order by there id 
+app.get("/api/order/:id", async (req, res) => {
+  const id = req.params.id;
+
+  const filter = {
+    "sellerInfo.userId": id,
+  };
+
+  const result = await orderCollection
+    .find(filter)
+    .sort({ createdAt: -1 }) // Newest first
+    .toArray();
+
+  res.send(result);
+});
+
+// seller dashboard statistic 
+app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+
+    const orders = await orderCollection
+      .find({
+        "sellerInfo.userId": sellerId,
+      })
+      .toArray();
+
+    const totalOrders = orders.length;
+
+    const pendingOrders = orders.filter(
+      (o) => o.orderStatus === "pending"
+    ).length;
+
+    const acceptedOrders = orders.filter(
+      (o) => o.orderStatus === "accepted"
+    ).length;
+
+    const processingOrders = orders.filter(
+      (o) => o.orderStatus === "processing"
+    ).length;
+
+    const shippedOrders = orders.filter(
+      (o) => o.orderStatus === "shipped"
+    ).length;
+
+    const deliveredOrders = orders.filter(
+      (o) => o.orderStatus === "delivered"
+    );
+
+    const rejectedOrders = orders.filter(
+      (o) => o.orderStatus === "rejected"
+    ).length;
+
+    const totalRevenue = deliveredOrders.reduce(
+      (sum, order) =>
+        sum + Number(order.productInfo.productPrice),
+      0
+    );
+
+    res.send({
+      totalOrders,
+      pendingOrders,
+      acceptedOrders,
+      processingOrders,
+      shippedOrders,
+      deliveredOrders: deliveredOrders.length,
+      rejectedOrders,
+      totalRevenue,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      message: "Dashboard Error",
+    });
+  }
+});
+// seller update status 
+app.patch("/api/orders/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+  //  console.log(status,'BACKEND_STATUS');
+    const order = await orderCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!order) {
+      return res.status(404).send({
+        message: "Order not found",
+      });
+    }
+
+    if (
+      order.orderStatus === "delivered" ||
+      order.orderStatus === "rejected"
+    ) {
+      return res.status(400).send({
+        message: "Order can no longer be updated",
+      });
+    }
+
+    // const currentIndex = ORDER_FLOW.indexOf(order.orderStatus);
+    // const nextStatus = ORDER_FLOW[currentIndex + 1];
+
+    // if (status !== nextStatus) {
+    //   return res.status(400).send({
+    //     message: `Next valid status is '${nextStatus}'`,
+    //   });
+    // }
+
+    const result = await orderCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          orderStatus: status,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      message: "Status update failed",
+    });
+  }
+});
+
+// seller reject status
+app.patch("/api/orders/:id/reject", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { reason } = req.body;
+
+    const order = await orderCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!order) {
+      return res.status(404).send({
+        message: "Order not found",
+      });
+    }
+
+    if (order.orderStatus !== "pending") {
+      return res.status(400).send({
+        message:
+          "Only pending orders can be rejected.",
+      });
+    }
+
+    const result = await orderCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          orderStatus: "rejected",
+          rejectedAt: new Date(),
+          rejectReason: reason || "",
+        },
+      }
+    );
+
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      message: "Reject failed",
+    });
+  }
+});
+
+
+
+
 
 
 
