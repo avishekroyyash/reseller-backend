@@ -307,6 +307,10 @@ app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
   try {
     const { sellerId } = req.params;
 
+    const totalProducts = await productCollection.countDocuments({
+  "sellerInfo.userId": sellerId,
+});
+
     const orders = await orderCollection
       .find({
         "sellerInfo.userId": sellerId,
@@ -316,27 +320,27 @@ app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
     const totalOrders = orders.length;
 
     const pendingOrders = orders.filter(
-      (o) => o.orderStatus === "pending"
+      o => o.orderStatus === "pending"
     ).length;
 
     const acceptedOrders = orders.filter(
-      (o) => o.orderStatus === "accepted"
+      o => o.orderStatus === "accepted"
     ).length;
 
     const processingOrders = orders.filter(
-      (o) => o.orderStatus === "processing"
+      o => o.orderStatus === "processing"
     ).length;
 
     const shippedOrders = orders.filter(
-      (o) => o.orderStatus === "shipped"
+      o => o.orderStatus === "shipped"
     ).length;
 
     const deliveredOrders = orders.filter(
-      (o) => o.orderStatus === "delivered"
+      o => o.orderStatus === "delivered"
     );
 
     const rejectedOrders = orders.filter(
-      (o) => o.orderStatus === "rejected"
+      o => o.orderStatus === "rejected"
     ).length;
 
     const totalRevenue = deliveredOrders.reduce(
@@ -345,7 +349,16 @@ app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
       0
     );
 
+    const recentOrders = await orderCollection
+      .find({
+        "sellerInfo.userId": sellerId,
+      })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .toArray();
+
     res.send({
+      totalProducts,
       totalOrders,
       pendingOrders,
       acceptedOrders,
@@ -354,12 +367,14 @@ app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
       deliveredOrders: deliveredOrders.length,
       rejectedOrders,
       totalRevenue,
+      recentOrders,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
 
     res.status(500).send({
       message: "Dashboard Error",
+      error: error.message, // remove this in production if desired
     });
   }
 });
