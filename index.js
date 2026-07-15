@@ -41,6 +41,34 @@ async function run() {
 
 
 
+// all admin api
+//admin get all user 
+app.get('/api/admin/users',async(req,res)=>{
+  const result = await userCollection.find().sort({ createdAt: -1 }).toArray()
+  res.send(result)
+})
+// admin update user 
+app.patch('/api/admin/:id',async(req,res)=>{
+  const ubody = req.body
+  const {id}= req.params
+  const filter = {_id: new ObjectId(id)}
+  const updateBody={
+    $set:{
+      ...ubody
+    },
+  }
+  const result = await userCollection.updateOne(filter,updateBody)
+  res.send(result)
+})
+//admin user delete 
+ app.delete('/api/admin/:id',async(req,res)=>{
+    const {id} = req.params
+     const filter = {_id: new ObjectId(id)}
+    const result = await userCollection.deleteOne(filter)
+    res.send(result)
+  }) 
+
+
 
 
 
