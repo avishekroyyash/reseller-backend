@@ -67,8 +67,111 @@ app.patch('/api/admin/:id',async(req,res)=>{
     const result = await userCollection.deleteOne(filter)
     res.send(result)
   }) 
+  
+  // Get all products by admin
+app.get("/api/admin/products", async (req, res) => {
+  const result = await productCollection
+    .find()
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  res.send(result);
+});
+
+app.patch("/api/admin/products/:id", async (req, res) => {
+  const { id } = req.params;
+  const product = req.body;
+
+  const updateBody = {
+    ...product,
+    updatedAt: new Date(), // Better than createdAt
+  };
+
+  const result = await productCollection.updateOne(
+    { _id: new ObjectId(id) },
+    {
+      $set: updateBody,
+    }
+  );
+
+  res.send(result);
+});
+
+// Delete product by admin
+app.delete("/api/admin/products/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const result = await productCollection.deleteOne({
+    _id: new ObjectId(id),
+  });
+
+  res.send(result);
+});
 
 
+
+
+// admin all order get
+app.get('/api/admin/orders',async(req,res)=>{
+  const result = await orderCollection.find().sort({createdAt:-1}).toArray()
+  res.send(result)
+})
+//admin update order status 
+app.patch("/api/admin/orders/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { status } = req.body;
+
+    const result = await orderCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          orderStatus: status,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      message: "Failed to update order status",
+    });
+  }
+});
+// admin dispute the order 
+app.patch("/api/admin/orders/:id/dispute", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { adminNote, resolved } = req.body;
+
+    const result = await orderCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          "dispute.adminNote": adminNote,
+          "dispute.resolved": resolved,
+          "dispute.status": resolved ? "resolved" : "pending",
+          "dispute.resolvedAt": resolved ? new Date() : null,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed to resolve dispute",
+    });
+  }
+});
 
 
 
@@ -195,13 +298,13 @@ app.get("/api/buyer/dashboard/:id", async (req, res) => {
   });
 });
 
-
-
-
-  // get the all product data and implement search/filter/sort/catagory
 app.get("/api/products", async (req, res) => {
-  const query = {};
+  // Only approved products
+  const query = {
+    status: "approved",
+  };
 
+  // Search by title
   if (req.query.search) {
     query.title = {
       $regex: req.query.search,
@@ -209,17 +312,18 @@ app.get("/api/products", async (req, res) => {
     };
   }
 
+  // Filter by category
   if (req.query.category) {
     query.category = req.query.category;
   }
 
+  // Filter by condition
   if (req.query.condition) {
     query.condition = req.query.condition;
   }
 
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 12;
-
+  const limit = parseInt(req.query.limit) || 5;
   const skip = (page - 1) * limit;
 
   let cursor = productCollection.find(query);
@@ -237,8 +341,13 @@ app.get("/api/products", async (req, res) => {
     case "latest":
       cursor = cursor.sort({ createdAt: -1 });
       break;
+
+    default:
+      cursor = cursor.sort({ createdAt: -1 });
   }
+
   const totalProducts = await productCollection.countDocuments(query);
+
   const products = await cursor
     .skip(skip)
     .limit(limit)
@@ -251,6 +360,8 @@ app.get("/api/products", async (req, res) => {
     totalPages: Math.ceil(totalProducts / limit),
   });
 });
+
+
 //get produt by product id in productdetails page
    app.get('/api/products/:id',async(req,res)=>{
     const {id}=req.params
