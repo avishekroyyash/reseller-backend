@@ -173,7 +173,51 @@ app.patch("/api/admin/orders/:id/dispute", async (req, res) => {
   }
 });
 
+// admin dashboard data all
+app.get("/api/admin/dashboard", async (req, res) => {
+  try {
+    const totalUsers = await userCollection.countDocuments();
 
+    const totalProducts = await productCollection.countDocuments();
+
+    const totalOrders = await orderCollection.countDocuments();
+
+    const paidOrders = await orderCollection
+      .find({ paymentStatus: "paid" })
+      .toArray();
+
+    const totalRevenue = paidOrders.reduce((sum, order) => {
+      return sum + Number(order.productInfo.productPrice || 0);
+    }, 0);
+
+    const recentOrders = await orderCollection
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .toArray();
+
+    const recentUsers = await userCollection
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .toArray();
+
+    res.send({
+      totalUsers,
+      totalProducts,
+      totalOrders,
+      totalRevenue,
+      recentOrders,
+      recentUsers,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).send({
+      message: "Failed to load dashboard.",
+    });
+  }
+});
 
 
   //all buyer api
