@@ -35,15 +35,58 @@ async function run() {
     const orderCollection = database.collection('order')
     const paymentCollection = database.collection('payment')
     const userCollection = database.collection('user')
+    const sessionCollection = database.collection('session')
 
 
+//verify data 
+const verifyToken =async(req,res,next)=>{
+  const authHeader = req?.headers?.authorization
+  if(!authHeader){
+   return res.status(401).send({message:'unauthorized accress '})
+  }
+  const token = authHeader.split(' ')[1]
+  // console.log(token,'TOKEN');
+  if(!token){
+    return res.status(401).send({message:'unauthorized accress 1'})
+  }
+// console.log(req.headers,'request header ');
+  const query = {token : token}
+  const session = await sessionCollection.findOne(query)
+  //console.log(session);
+  const userId=session?.userId
+  const userquery = { _id:userId}
+  const user = await userCollection.findOne(userquery)
+  // console.log(user,'USER-DATA');
+  req.user = user
+next()
+}
+//must use after verify token 
+const verifyAdmin = async(req,res,next)=>{
+  if(req.user?.role !== 'admin'){
+    return res.status(403).send({message:'Forbidden Access'})
+  }
+  next()
+}
+//must use after verify token 
+const verifySeller = async(req,res,next)=>{
+  if(req.user?.role !== 'seller'){
+    return res.status(403).send({message:'Forbidden Access'})
+  }
+  next()
+}
+const verifyBuyer = async(req,res,next)=>{
+  if(req.user?.role !== 'buyer'){
+    return res.status(403).send({message:'Forbidden Access'})
+  }
+  next()
+}
 
 
 
 
 // all admin api
 //admin get all user 
-app.get('/api/admin/users',async(req,res)=>{
+app.get('/api/admin/users',verifyToken,verifyAdmin,async(req,res)=>{
   const result = await userCollection.find().sort({ createdAt: -1 }).toArray()
   res.send(result)
 })
