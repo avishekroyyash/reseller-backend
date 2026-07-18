@@ -74,6 +74,7 @@ const verifySeller = async(req,res,next)=>{
   }
   next()
 }
+//must use after verify token 
 const verifyBuyer = async(req,res,next)=>{
   if(req.user?.role !== 'buyer'){
     return res.status(403).send({message:'Forbidden Access'})
@@ -90,6 +91,7 @@ app.get('/api/admin/users',verifyToken,verifyAdmin,async(req,res)=>{
   const result = await userCollection.find().sort({ createdAt: -1 }).toArray()
   res.send(result)
 })
+
 // admin update user 
 app.patch('/api/admin/:id',async(req,res)=>{
   const ubody = req.body
@@ -103,6 +105,7 @@ app.patch('/api/admin/:id',async(req,res)=>{
   const result = await userCollection.updateOne(filter,updateBody)
   res.send(result)
 })
+
 //admin user delete 
  app.delete('/api/admin/:id',async(req,res)=>{
     const {id} = req.params
@@ -117,33 +120,29 @@ app.get("/api/admin/products", async (req, res) => {
     .find()
     .sort({ createdAt: -1 })
     .toArray();
-
   res.send(result);
 });
 
+//admin update product just status like approve or reject 
 app.patch("/api/admin/products/:id", async (req, res) => {
   const { id } = req.params;
   const product = req.body;
-
   const updateBody = {
     ...product,
     updatedAt: new Date(), // Better than createdAt
   };
-
   const result = await productCollection.updateOne(
     { _id: new ObjectId(id) },
     {
       $set: updateBody,
     }
   );
-
   res.send(result);
 });
 
 // Delete product by admin
 app.delete("/api/admin/products/:id", async (req, res) => {
   const { id } = req.params;
-
   const result = await productCollection.deleteOne({
     _id: new ObjectId(id),
   });
@@ -151,21 +150,17 @@ app.delete("/api/admin/products/:id", async (req, res) => {
   res.send(result);
 });
 
-
-
-
 // admin all order get
 app.get('/api/admin/orders',async(req,res)=>{
   const result = await orderCollection.find().sort({createdAt:-1}).toArray()
   res.send(result)
 })
+
 //admin update order status 
 app.patch("/api/admin/orders/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
-
     const { status } = req.body;
-
     const result = await orderCollection.updateOne(
       {
         _id: new ObjectId(id),
@@ -177,22 +172,20 @@ app.patch("/api/admin/orders/:id/status", async (req, res) => {
         },
       }
     );
-
     res.send(result);
   } catch (error) {
     console.log(error);
-
     res.status(500).send({
       message: "Failed to update order status",
     });
   }
 });
+
 // admin dispute the order 
 app.patch("/api/admin/orders/:id/dispute", async (req, res) => {
   try {
     const { id } = req.params;
     const { adminNote, resolved } = req.body;
-
     const result = await orderCollection.updateOne(
       {
         _id: new ObjectId(id),
@@ -207,7 +200,6 @@ app.patch("/api/admin/orders/:id/dispute", async (req, res) => {
         },
       }
     );
-
     res.send(result);
   } catch (error) {
     res.status(500).send({
@@ -220,31 +212,24 @@ app.patch("/api/admin/orders/:id/dispute", async (req, res) => {
 app.get("/api/admin/dashboard", async (req, res) => {
   try {
     const totalUsers = await userCollection.countDocuments();
-
     const totalProducts = await productCollection.countDocuments();
-
     const totalOrders = await orderCollection.countDocuments();
-
     const paidOrders = await orderCollection
       .find({ paymentStatus: "paid" })
       .toArray();
-
     const totalRevenue = paidOrders.reduce((sum, order) => {
       return sum + Number(order.productInfo.productPrice || 0);
     }, 0);
-
     const recentOrders = await orderCollection
       .find()
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
-
     const recentUsers = await userCollection
       .find()
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
-
     res.send({
       totalUsers,
       totalProducts,
@@ -255,12 +240,13 @@ app.get("/api/admin/dashboard", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-
     res.status(500).send({
       message: "Failed to load dashboard.",
     });
   }
 });
+
+
 
 
   //all buyer api
@@ -277,6 +263,7 @@ app.get("/api/admin/dashboard", async (req, res) => {
     const result = await userCollection.updateOne(filter,updateBody)
     res.send(result)
   })
+
   //buyer payment data get 
   app.get('/api/payment/:id',async(req,res)=>{
     const id=req.params.id
@@ -295,11 +282,13 @@ app.get("/api/admin/dashboard", async (req, res) => {
   const result = await wishlistCollection.insertOne(updateBody)
   res.send(result)
   })
+
   //buyer wishlist get
   app.get('/api/wishlist',async(req,res)=>{
     const result = await wishlistCollection.find().toArray()
     res.send(result)
   })
+
   //get wishlist by user id
    app.get('/api/wishlist/:userid',async(req,res)=>{
     const {userid} = req.params
@@ -307,6 +296,7 @@ app.get("/api/admin/dashboard", async (req, res) => {
     const result = await wishlistCollection.find(filter).toArray()
     res.send(result)
   })
+
   // buyer wishlist delete 
   app.delete('/api/wishlist/:id',async(req,res)=>{
     const {id} = req.params
@@ -314,30 +304,27 @@ app.get("/api/admin/dashboard", async (req, res) => {
     const result = await wishlistCollection.deleteOne(filter)
     res.send(result)
   }) 
+
 //buyer order get using id 
 app.get("/app/order/:id", async (req, res) => {
   const id = req.params.id;
-
   const filter = {
     "buyerInfo.userId": id,
   };
-
   const result = await orderCollection
     .find(filter)
     .sort({ createdAt: -1 }) // Newest first
     .toArray();
-
   res.send(result);
 });
+
  // buyer order cancel 
  app.patch("/api/orders/:id/cancel", async (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;
-
   const filter = {
     _id: new ObjectId(id),
   };
-
   const updateDoc = {
     $set: {
       orderStatus: "cancelled",
@@ -346,29 +333,24 @@ app.get("/app/order/:id", async (req, res) => {
       cancelReason: reason || "",
     },
   };
-
   const result = await orderCollection.updateOne(filter, updateDoc);
-
   res.send(result);
 });
 
+//buyer all dashboard data 
 app.get("/api/buyer/dashboard/:id", async (req, res) => {
   const { id } = req.params;
-
   const totalOrders = await orderCollection.countDocuments({
     "buyerInfo.userId": id,
   });
-
   const cancelledOrders = await orderCollection.countDocuments({
     "buyerInfo.userId": id,
     orderStatus: "cancelled",
   });
-
   const processingOrders = await orderCollection.countDocuments({
     "buyerInfo.userId": id,
     orderStatus: "processing",
   });
-
   const recentOrders = await orderCollection
     .find({
       "buyerInfo.userId": id,
@@ -376,7 +358,6 @@ app.get("/api/buyer/dashboard/:id", async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(5)
     .toArray();
-
   res.send({
     totalOrders,
     cancelledOrders,
@@ -385,12 +366,15 @@ app.get("/api/buyer/dashboard/:id", async (req, res) => {
   });
 });
 
+
+
+
+// all product get in user which is just approved 
 app.get("/api/products", async (req, res) => {
   // Only approved products
   const query = {
     status: "approved",
   };
-
   // Search by title
   if (req.query.search) {
     query.title = {
@@ -398,49 +382,38 @@ app.get("/api/products", async (req, res) => {
       $options: "i",
     };
   }
-
   // Filter by category
   if (req.query.category) {
     query.category = req.query.category;
   }
-
   // Filter by condition
   if (req.query.condition) {
     query.condition = req.query.condition;
   }
-
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 5;
+  const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
-
   let cursor = productCollection.find(query);
-
   // Sorting
   switch (req.query.sort) {
     case "low":
       cursor = cursor.sort({ price: 1 });
       break;
-
     case "high":
       cursor = cursor.sort({ price: -1 });
       break;
-
     case "latest":
       cursor = cursor.sort({ createdAt: -1 });
       break;
-
     default:
       cursor = cursor.sort({ createdAt: -1 });
   }
-
   const totalProducts = await productCollection.countDocuments(query);
-
   const products = await cursor
     .skip(skip)
     .limit(limit)
     .toArray();
-
-  res.send({
+   res.send({
     products,
     totalProducts,
     currentPage: page,
@@ -448,13 +421,13 @@ app.get("/api/products", async (req, res) => {
   });
 });
 
-
 //get produt by product id in productdetails page
    app.get('/api/products/:id',async(req,res)=>{
     const {id}=req.params
     const result = await productCollection.findOne({_id:new ObjectId(id)})
     res.send(result)
    })
+
 // product review of buyer id and product id 
  app.post('/api/review',async(req,res)=>{
   const rbody = req.body
@@ -465,6 +438,7 @@ app.get("/api/products", async (req, res) => {
   const result = await reviewCollection.insertOne(updateBody)
   res.send(result)
  })
+
 // product review get by product id and sort by review
 app.get('/api/review/:pid',async(req,res)=>{
   const {pid} = req.params
@@ -473,9 +447,52 @@ app.get('/api/review/:pid',async(req,res)=>{
   res.send(result)
 })
 
+//this is for catagories page 
+app.get("/api/categories", async (req, res) => {
+  try {
+    const categories = await productCollection
+      .aggregate([
+        {
+          $match: {
+            status: "approved",
+          },
+        },
+        {
+          $group: {
+            _id: "$category",
+            totalJobs: {
+              $sum: 1,
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            category: "$_id",
+            totalJobs: 1,
+          },
+        },
+        {
+          $sort: {
+            category: 1,
+          },
+        },
+      ])
+      .toArray();
+
+    res.send(categories);
+  } catch (error) {
+    res.status(500).send({
+      message: "Failed",
+    });
+  }
+});
+
 
   
-   // all seller api 
+
+
+ // all seller api 
   // make seller product post 
    app.post('/api/products',async(req,res)=>{
    const pbody = req.body
@@ -486,12 +503,14 @@ app.get('/api/review/:pid',async(req,res)=>{
    const result = await productCollection.insertOne(updateProduct)
    res.send(result)
    }) 
-  // get the seller my all product
+
+  // get the seller  all product by seller id
   app.get('/api/products/seller/:sellerId',async(req,res)=>{
     const {sellerId}=req.params
     const result = await productCollection.find({sellerId}).toArray()
     res.send(result)
   })
+
   //edit the seller product by product id
   app.patch('/api/products/:id',async(req,res)=>{
     const {id}= req.params
@@ -505,6 +524,7 @@ app.get('/api/review/:pid',async(req,res)=>{
     const result = await productCollection.updateOne(filter,updateBody)
     res.send(result)
   })
+
   // delete the seller job
   app.delete('/api/products/:id',async(req,res)=>{
     const {id}=req.params
@@ -512,69 +532,56 @@ app.get('/api/review/:pid',async(req,res)=>{
     const result = await productCollection.deleteOne(filter)
     res.send(result)
   })
+
 // seller get all order by there id 
 app.get("/api/order/:id", async (req, res) => {
   const id = req.params.id;
-
   const filter = {
     "sellerInfo.userId": id,
   };
-
   const result = await orderCollection
     .find(filter)
     .sort({ createdAt: -1 }) // Newest first
     .toArray();
-
   res.send(result);
 });
 
-// seller dashboard statistic 
+// seller dashboard all statistic data  
 app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
   try {
     const { sellerId } = req.params;
-
     const totalProducts = await productCollection.countDocuments({
   "sellerInfo.userId": sellerId,
 });
-
     const orders = await orderCollection
       .find({
         "sellerInfo.userId": sellerId,
       })
       .toArray();
-
     const totalOrders = orders.length;
-
     const pendingOrders = orders.filter(
       o => o.orderStatus === "pending"
     ).length;
-
     const acceptedOrders = orders.filter(
       o => o.orderStatus === "accepted"
     ).length;
-
     const processingOrders = orders.filter(
       o => o.orderStatus === "processing"
     ).length;
-
     const shippedOrders = orders.filter(
       o => o.orderStatus === "shipped"
     ).length;
-
     const deliveredOrders = orders.filter(
       o => o.orderStatus === "delivered"
     );
-
     const rejectedOrders = orders.filter(
       o => o.orderStatus === "rejected"
     ).length;
-
     const totalRevenue = deliveredOrders.reduce(
       (sum, order) =>
         sum + Number(order.productInfo.productPrice),
       0
     );
-
     const recentOrders = await orderCollection
       .find({
         "sellerInfo.userId": sellerId,
@@ -582,7 +589,6 @@ app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
-
     res.send({
       totalProducts,
       totalOrders,
@@ -604,7 +610,8 @@ app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
     });
   }
 });
-// seller update status 
+
+// seller order update status 
 app.patch("/api/orders/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
@@ -613,13 +620,11 @@ app.patch("/api/orders/:id/status", async (req, res) => {
     const order = await orderCollection.findOne({
       _id: new ObjectId(id),
     });
-
     if (!order) {
       return res.status(404).send({
         message: "Order not found",
       });
     }
-
     if (
       order.orderStatus === "delivered" ||
       order.orderStatus === "rejected"
@@ -628,16 +633,6 @@ app.patch("/api/orders/:id/status", async (req, res) => {
         message: "Order can no longer be updated",
       });
     }
-
-    // const currentIndex = ORDER_FLOW.indexOf(order.orderStatus);
-    // const nextStatus = ORDER_FLOW[currentIndex + 1];
-
-    // if (status !== nextStatus) {
-    //   return res.status(400).send({
-    //     message: `Next valid status is '${nextStatus}'`,
-    //   });
-    // }
-
     const result = await orderCollection.updateOne(
       {
         _id: new ObjectId(id),
@@ -649,41 +644,34 @@ app.patch("/api/orders/:id/status", async (req, res) => {
         },
       }
     );
-
     res.send(result);
   } catch (error) {
     console.log(error);
-
     res.status(500).send({
       message: "Status update failed",
     });
   }
 });
 
-// seller reject status
+// seller reject order status
 app.patch("/api/orders/:id/reject", async (req, res) => {
   try {
     const { id } = req.params;
-
     const { reason } = req.body;
-
     const order = await orderCollection.findOne({
       _id: new ObjectId(id),
     });
-
     if (!order) {
       return res.status(404).send({
         message: "Order not found",
       });
     }
-
     if (order.orderStatus !== "pending") {
       return res.status(400).send({
         message:
           "Only pending orders can be rejected.",
       });
     }
-
     const result = await orderCollection.updateOne(
       {
         _id: new ObjectId(id),
@@ -696,19 +684,14 @@ app.patch("/api/orders/:id/reject", async (req, res) => {
         },
       }
     );
-
     res.send(result);
   } catch (error) {
     console.log(error);
-
     res.status(500).send({
       message: "Reject failed",
     });
   }
 });
-
-
-
 
 
 
@@ -724,6 +707,7 @@ app.patch("/api/orders/:id/reject", async (req, res) => {
   res.send(result)
 });
 
+//payment history 
 app.post('/api/payment',async(req,res)=>{
   const pbody = req.body
   const updateBody = {
