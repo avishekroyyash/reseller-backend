@@ -27,7 +27,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const database = client.db('reseller-a10')
     const productCollection = database.collection('productInfo')
     const wishlistCollection = database.collection('wishlist')
@@ -209,7 +209,7 @@ app.patch("/api/admin/orders/:id/dispute", async (req, res) => {
 });
 
 // admin dashboard data all
-app.get("/api/admin/dashboard", async (req, res) => {
+app.get("/api/admin/dashboard",verifyToken,verifyAdmin,async (req, res) => {
   try {
     const totalUsers = await userCollection.countDocuments();
     const totalProducts = await productCollection.countDocuments();
@@ -732,7 +732,7 @@ app.post('/api/payment',async(req,res)=>{
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
