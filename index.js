@@ -115,7 +115,7 @@ app.patch('/api/admin/:id',async(req,res)=>{
   }) 
   
   // Get all products by admin
-app.get("/api/admin/products", async (req, res) => {
+app.get("/api/admin/products",verifyToken,verifyAdmin, async (req, res) => {
   const result = await productCollection
     .find()
     .sort({ createdAt: -1 })
@@ -151,7 +151,7 @@ app.delete("/api/admin/products/:id", async (req, res) => {
 });
 
 // admin all order get
-app.get('/api/admin/orders',async(req,res)=>{
+app.get('/api/admin/orders',verifyToken,verifyAdmin,async(req,res)=>{
   const result = await orderCollection.find().sort({createdAt:-1}).toArray()
   res.send(result)
 })
@@ -265,7 +265,7 @@ app.get("/api/admin/dashboard", async (req, res) => {
   })
 
   //buyer payment data get 
-  app.get('/api/payment/:id',async(req,res)=>{
+  app.get('/api/payment/:id',verifyToken,verifyBuyer,async(req,res)=>{
     const id=req.params.id
     const filter = {userId: id}
     const result = await paymentCollection.find(filter).sort({ createdAt: -1 }).toArray();
@@ -290,7 +290,7 @@ app.get("/api/admin/dashboard", async (req, res) => {
   })
 
   //get wishlist by user id
-   app.get('/api/wishlist/:userid',async(req,res)=>{
+   app.get('/api/wishlist/:userid',verifyToken,verifyBuyer,async(req,res)=>{
     const {userid} = req.params
     const filter = {userId:userid}
     const result = await wishlistCollection.find(filter).toArray()
@@ -305,8 +305,8 @@ app.get("/api/admin/dashboard", async (req, res) => {
     res.send(result)
   }) 
 
-//buyer order get using id 
-app.get("/app/order/:id", async (req, res) => {
+//buyer all order get using id 
+app.get("/app/order/:id",verifyToken,verifyBuyer, async (req, res) => {
   const id = req.params.id;
   const filter = {
     "buyerInfo.userId": id,
@@ -315,6 +315,17 @@ app.get("/app/order/:id", async (req, res) => {
     .find(filter)
     .sort({ createdAt: -1 }) // Newest first
     .toArray();
+  res.send(result);
+});
+
+//buyer single order get using id or param
+app.get("/app/order1/:id", async (req, res) => {
+  const id = req.params.id;
+  const filter = {
+    _id:new ObjectId(id)
+  };
+  const result = await orderCollection.findOne(filter)
+    
   res.send(result);
 });
 
@@ -338,7 +349,7 @@ app.get("/app/order/:id", async (req, res) => {
 });
 
 //buyer all dashboard data 
-app.get("/api/buyer/dashboard/:id", async (req, res) => {
+app.get("/api/buyer/dashboard/:id",verifyToken,verifyBuyer, async (req, res) => {
   const { id } = req.params;
   const totalOrders = await orderCollection.countDocuments({
     "buyerInfo.userId": id,
@@ -505,7 +516,7 @@ app.get("/api/categories", async (req, res) => {
    }) 
 
   // get the seller  all product by seller id
-  app.get('/api/products/seller/:sellerId',async(req,res)=>{
+  app.get('/api/products/seller/:sellerId',verifyToken,verifySeller,async(req,res)=>{
     const {sellerId}=req.params
     const result = await productCollection.find({sellerId}).toArray()
     res.send(result)
@@ -534,7 +545,7 @@ app.get("/api/categories", async (req, res) => {
   })
 
 // seller get all order by there id 
-app.get("/api/order/:id", async (req, res) => {
+app.get("/api/order/:id",verifyToken,verifySeller, async (req, res) => {
   const id = req.params.id;
   const filter = {
     "sellerInfo.userId": id,
@@ -547,7 +558,7 @@ app.get("/api/order/:id", async (req, res) => {
 });
 
 // seller dashboard all statistic data  
-app.get("/api/seller/dashboard/:sellerId", async (req, res) => {
+app.get("/api/seller/dashboard/:sellerId",verifyToken,verifySeller, async (req, res) => {
   try {
     const { sellerId } = req.params;
     const totalProducts = await productCollection.countDocuments({
