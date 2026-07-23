@@ -281,7 +281,7 @@ app.get("/api/admin/dashboard",verifyToken,verifyAdmin,async (req, res) => {
   }
   const result = await wishlistCollection.insertOne(updateBody)
   res.send(result)
-  })
+  })  
 
   //buyer wishlist get
   app.get('/api/wishlist',async(req,res)=>{
